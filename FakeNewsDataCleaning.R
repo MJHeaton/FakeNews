@@ -55,9 +55,12 @@ sw <- bind_rows(get_stopwords(language="en"), #English
 sw <- sw %>%
   bind_rows(., data.frame(word="это", lexicon="snowball"))
 
+## tidytext format
+tidyNews <- fakeNews %>%
+  unnest_tokens(tbl=., output=word, input=text)
+
 ## Count of words in each article
-news.wc <- fakeNews %>%
-  unnest_tokens(tbl=., output=word, input=text) %>%
+news.wc <-  tidyNews %>%
   anti_join(sw) %>% 
   count(id, word, sort=TRUE)
 
@@ -110,9 +113,9 @@ fakeNews.tfidf <- left_join(fakeNews, news.tfidf, by="Id")
 
 ## Remaining articles with NAs all have missing text so should get 0 tfidf
 fakeNews.clean <- fakeNews.tfidf %>%
-  select(-isFake, -title.x, -author.x, -text.x, -language.x) %>% 
+  select(-isFake, -title.x, -author.x, -text.x) %>% 
   replace(is.na(.), 0) %>% 
-  left_join(fakeNews.tfidf %>% select(Id, isFake, title.x, author.x, text.x, language.x),., by="Id")
+  left_join(fakeNews.tfidf %>% select(Id, isFake, title.x, author.x, text.x),., by="Id")
 
 ## Write out clean dataset
 write_csv(x=fakeNews.clean %>% select(-author.x, -title.x, -text.x),
