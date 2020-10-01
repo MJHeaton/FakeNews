@@ -6,3 +6,5 @@ FakeNews.Rproj
 submit.csv
 test.csv
 train.csv
+CleanFakeNews.csv
+fakeNewsPreds.csv
