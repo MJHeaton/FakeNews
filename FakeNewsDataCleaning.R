@@ -88,12 +88,22 @@ top.words <- word.count %>%
 
 news.wc.top <- news.wc %>% filter(word%in%top.words$word) %>%
   bind_tf_idf(word, id, n)
-a.doc <- sample(news.wc$title,1)
-news.wc.top %>% filter(title==a.doc) %>%
+true.doc <- sample(fakeNews %>% filter(label==0) %>% pull(title),1)
+news.wc.top %>% filter(title==true.doc) %>%
   slice_max(order_by=tf_idf, n=20) %>%
   ggplot(data=., aes(x=reorder(word, tf_idf), y=tf_idf)) + 
   geom_bar(stat="identity") +
-  coord_flip() + ggtitle(label=a.doc)
+  coord_flip() + ggtitle(label=true.doc)
+fake.doc <- sample(fakeNews %>% filter(label==1) %>% pull(title),1)
+news.wc.top %>% filter(title==fake.doc) %>%
+  slice_max(order_by=tf_idf, n=20) %>%
+  ggplot(data=., aes(x=reorder(word, tf_idf), y=tf_idf)) + 
+  geom_bar(stat="identity") +
+  coord_flip() + ggtitle(label=fake.doc)
+
+############################################
+## Merge back with original fakeNews data ##
+############################################
 
 ## Convert from "long" data format to "wide" data format
 ## so that word tfidf become explanatory variables
@@ -116,6 +126,13 @@ fakeNews.clean <- fakeNews.tfidf %>%
   select(-isFake, -title.x, -author.x, -text.x) %>% 
   replace(is.na(.), 0) %>% 
   left_join(fakeNews.tfidf %>% select(Id, isFake, title.x, author.x, text.x),., by="Id")
+
+## Compare distributions of tfidf for different words
+a.word <- sample(names(fakeNews.clean)[-c(1:7)], 1)
+sub.df <- fakeNews.clean %>% select(as.name(a.word), isFake)
+names(sub.df) <- c("x", "isFake")
+ggplot(data=sub.df %>% filter(x>0), mapping=aes(x=x, color=as.factor(isFake))) +
+  geom_density() + ggtitle(label=a.word)
 
 ## Write out clean dataset
 write_csv(x=fakeNews.clean %>% select(-author.x, -title.x, -text.x),
